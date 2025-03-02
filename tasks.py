@@ -30,6 +30,7 @@ def run_invoke(
     cmd,
     environment: Optional[dict] = None,
     warn: bool = False,
+    pty: bool = False,
 ) -> invoke.runners.Result:
     def one_line_command(string):
         return re.sub("\\s+", " ", string).strip()
@@ -39,7 +40,7 @@ def run_invoke(
         env=environment,
         hide=False,
         warn=warn,
-        pty=False,
+        pty=pty,
         echo=True,
     )
 
@@ -266,4 +267,56 @@ def release(context, test_pypi=False, username=None, password=None):
                 {repository_argument_or_none}
                 {user_password}
         """,
+    )
+
+
+@task(aliases=["bd"])
+def build_docker(context, image: str = "html2print:latest", no_cache: bool = False, source="pypi"):
+    no_cache_argument = "--no-cache" if no_cache else ""
+    run_invoke(
+        context,
+        f"""
+        docker build .
+            --build-arg HTML2PRINT_SOURCE={source}
+            -t {image}
+            {no_cache_argument}
+        """
+    )
+
+
+@task(aliases=["rd"])
+def run_docker(context, image: str = "html2print:latest", command: Optional[str] = None):
+    command_argument = f'/bin/bash -c "{command}"' if command is not None else ""
+    entry_point_argument = '--entrypoint=""' if command_argument else ""
+
+    run_invoke(
+        context,
+        f"""
+        docker run
+            --name html2print
+            --rm
+            -it
+            -v "$(pwd):/data"
+            {entry_point_argument}
+            {image}
+            {command_argument}
+        """,
+        pty=True
+    )
+
+
+@task(aliases=["td"])
+def test_docker(context, image: str = "html2print:latest"):
+    run_invoke(
+        context,
+        f"""
+        mkdir -p output/ && chmod 777 output/
+        """
+    )
+    run_docker(
+        context,
+        image=image,
+        command=(
+            "cd tests/integration/01_hello_world && html2print print index.html /data/output/index.pdf"
+        )
     )
