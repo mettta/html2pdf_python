@@ -1,5 +1,5 @@
 # HTML2PDF JS file.
-html2print/html2pdf_js/
+# html2print/html2pdf_js/
 
 .idea/
 **/.wdm/
@@ -7,4 +7,5 @@ build/
 dist/
 tests/integration/.lit_test_times.txt
 tests/integration/**/Output/
+output/
 

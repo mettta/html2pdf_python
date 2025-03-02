@@ -7,6 +7,7 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +21,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.core.os_manager import ChromeType, OperationSystemManager
 
-__version__ = "0.0.14"
+__version__ = "0.0.15a2"
 
 PATH_TO_HTML2PDF_JS = os.path.join(
     os.path.dirname(os.path.join(__file__)), "html2pdf_js", "html2pdf.min.js"
@@ -284,7 +285,7 @@ def get_pdf_from_html(driver, url) -> bytes:
         print(  # noqa: T201
             "error: could not receive a successful completion status from HTML2PDF."
         )
-        sys.exit(1)
+        # sys.exit(1)
 
     print("html2print: JS logs from the print session:")  # noqa: T201
     print('"""')  # noqa: T201
@@ -316,14 +317,18 @@ def create_webdriver(
 
     service = Service(path_to_chrome)
 
+    # user_data_dir = tempfile.mkdtemp()
+
     webdriver_options = Options()
     webdriver_options.add_argument("start-maximized")
     webdriver_options.add_argument("disable-infobars")
+    webdriver_options.add_argument('--disable-gpu')
     webdriver_options.add_argument("--disable-extensions")
-    webdriver_options.add_argument("--headless")
+    webdriver_options.add_argument("--headless=new")
     # FIXME: This is not nice but otherwise it does not work in Ubuntu 24-based Docker image.
     # https://github.com/SeleniumHQ/selenium/issues/15327#issuecomment-2689287561
     webdriver_options.add_argument("--no-sandbox")
+    # webdriver_options.add_argument(f'--user-data-dir={user_data_dir}')
 
     # The Chrome option --disable-dev-shm-usage disables the use of /dev/shm
     # (shared memory) for temporary storage in Chrome.
